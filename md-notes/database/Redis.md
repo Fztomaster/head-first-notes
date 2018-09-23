@@ -1,5 +1,29 @@
 ## redis
+<!-- TOC -->
 
+- [redis](#redis)
+    - [数据类型](#数据类型)
+    - [操作数据类型](#操作数据类型)
+        - [string类型(重点)](#string类型重点)
+        - [hash类型(map)](#hash类型map)
+        - [list类型(LinkedList)](#list类型linkedlist)
+        - [set类型](#set类型)
+        - [通用key操作](#通用key操作)
+    - [Jedis(重点)](#jedis重点)
+        - [Jedis概述](#jedis概述)
+        - [Jedis操作](#jedis操作)
+            - [构造方法](#构造方法)
+            - [常用方法](#常用方法)
+            - [基本使用](#基本使用)
+        - [Jedis连接池操作](#jedis连接池操作)
+            - [构造方法](#构造方法-1)
+            - [使用自定义配置的连接池](#使用自定义配置的连接池)
+            - [基本使用](#基本使用-1)
+        - [JedisUtils工具类](#jedisutils工具类)
+            - [jedis.properties配置文件](#jedisproperties配置文件)
+            - [JedisUtils工具类](#jedisutils工具类-1)
+
+<!-- /TOC -->
 ### 数据类型
 
 key-value形式保存输出，key为String，value有5种数据类型：

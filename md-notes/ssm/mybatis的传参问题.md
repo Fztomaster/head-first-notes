@@ -1,4 +1,27 @@
-# mybatis的传参问题
+<!-- TOC -->
+
+- [mybatis的传参问题<!-- TOC -->](#mybatis的传参问题---toc---)
+    - [一.准备工作](#一准备工作)
+        - [1.pom.xml文件](#1pomxml文件)
+        - [2.sqlMapConfig.xml](#2sqlmapconfigxml)
+        - [3.jdbc.properties](#3jdbcproperties)
+        - [4.log4j.properties](#4log4jproperties)
+        - [5.javabean User类](#5javabean-user类)
+    - [二.@Param传参](#二param传参)
+        - [1.UserDao接口](#1userdao接口)
+        - [2.UserDao.xml](#2userdaoxml)
+        - [3.测试类MybatisTest](#3测试类mybatistest)
+    - [三.map传参](#三map传参)
+        - [1.UserDao接口](#1userdao接口-1)
+        - [2.UserDao.xml](#2userdaoxml-1)
+        - [3.测试类MybatisTest](#3测试类mybatistest-1)
+    - [四.javabean传参](#四javabean传参)
+        - [1.UserDao接口](#1userdao接口-2)
+        - [2.UserDao.xml](#2userdaoxml-2)
+        - [3.测试类MybatisTest](#3测试类mybatistest-2)
+
+<!-- /TOC -->
+
 ## 一.准备工作
 ### 1.pom.xml文件
 ```xml

@@ -1,4 +1,20 @@
 # jQuery插件之DataTable使用
+<!-- TOC -->
+
+- [jQuery插件之DataTable使用](#jquery插件之datatable使用)
+    - [一.概述](#一概述)
+        - [1.什么是DataTables](#1什么是datatables)
+        - [2.DataTables入门](#2datatables入门)
+            - [2-1.安装](#2-1安装)
+            - [2-2.数据](#2-2数据)
+            - [2-3.选项设置](#2-3选项设置)
+    - [二.demo案例](#二demo案例)
+        - [1.后台数据准备](#1后台数据准备)
+            - [1-1.domain层](#1-1domain层)
+            - [1-2.web层](#1-2web层)
+        - [2.前端数据准备](#2前端数据准备)
+
+<!-- /TOC -->
 ## 一.概述
 ### 1.什么是DataTables
 Datatables是一款jquery表格插件。它是一个高度灵活的工具，可以将任何HTML表格添加高级的交互功能。
