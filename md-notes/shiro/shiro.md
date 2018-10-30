@@ -1273,3 +1273,84 @@ UsernamePasswordToken token = new UsernamePasswordToken(userName, CryptographyUt
 ...
 ```
 
+## 六.Shiro支持特性
+
+### 1.Web  支持
+
+### 2.缓存支持
+
+### 3.并发支持
+
+### 4.测试支持
+
+### 5.“RunAs ”支持
+
+### 6.“Remember Me"
+
+**LoginServlet.java**
+
+```java
+import java.io.IOException;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.authc.AuthenticationException;
+import org.apache.shiro.authc.UsernamePasswordToken;
+import org.apache.shiro.session.Session;
+import org.apache.shiro.subject.Subject;
+
+import com.jack.util.CryptographyUtil;
+
+public class LoginServlet extends HttpServlet{
+	
+	private static final long serialVersionUID = 1L;
+
+	@Override
+	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		System.out.println("login doGet...");
+		req.getRequestDispatcher("/login.jsp").forward(req, resp);
+	}
+
+	@Override
+	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		System.out.println("login doPost");
+		String userName = req.getParameter("userName");
+		String password = req.getParameter("password");
+		// 获取当前登录认证用户
+		Subject subject = SecurityUtils.getSubject();
+		// 创建Token令牌
+		UsernamePasswordToken token = new UsernamePasswordToken(userName, CryptographyUtil.md5(password, "123456"));
+		try {
+			if (subject.isRemembered()) {
+				System.out.println("---isRememberMe---");
+			} else {
+				// 用户信息记录在cookie中
+				token.setRememberMe(true);				
+			}
+			// 登录
+			subject.login(token);
+			// 获取session
+			Session session = subject.getSession();
+			System.out.println("sessionId:" + session.getId());
+			System.out.println("sessionHost:" + session.getHost());
+			// 会话超时默认是30分钟
+			System.out.println("sessionTimeout:" + session.getTimeout()); 
+			// session中存数据
+			session.setAttribute("info", "session中的数据");
+			resp.sendRedirect("success.jsp");
+		} catch (AuthenticationException e) {
+			e.printStackTrace();
+			req.setAttribute("errorInfo", "用户名或者密码错误");
+			req.getRequestDispatcher("login.jsp").forward(req, resp);
+		}
+		
+	}
+}
+```
+
+## 七.spring整合shiro
+
