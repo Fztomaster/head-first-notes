@@ -3,7 +3,65 @@
 ## 一.Shiro概述
 
 ### 1.Shiro简介
+<!-- TOC -->
 
+- [Shiro](#shiro)
+    - [一.Shiro概述](#一shiro概述)
+        - [1.Shiro简介](#1shiro简介)
+        - [2.Shiro入门程序HelloShiro](#2shiro入门程序helloshiro)
+    - [二.身份认证](#二身份认证)
+        - [1.Subject认证主体](#1subject认证主体)
+        - [2.身份认证流程](#2身份认证流程)
+        - [3.Realm和JdbcRealm](#3realm和jdbcrealm)
+        - [4.demo案例](#4demo案例)
+    - [三.权限认证(授权)](#三权限认证授权)
+        - [1.权限认证核心要素](#1权限认证核心要素)
+        - [2.授权](#2授权)
+            - [2.1基于角色的访问控制-相关API](#21基于角色的访问控制-相关api)
+            - [2.2基于权限的访问控制-相关API](#22基于权限的访问控制-相关api)
+            - [2.3基于角色和权限的测试demo](#23基于角色和权限的测试demo)
+            - [2.4Permissions 对权限深入理解](#24permissions-对权限深入理解)
+            - [2.5授权流程](#25授权流程)
+    - [四.Shiro集成Web](#四shiro集成web)
+        - [1.Shiro集成Web配置](#1shiro集成web配置)
+        - [2.Shiro集成Web具体使用](#2shiro集成web具体使用)
+        - [3.Shiro标签使用](#3shiro标签使用)
+            - [3.1 hasRole标签](#31-hasrole标签)
+            - [3.2 guest标签](#32-guest标签)
+            - [3.3 user标签](#33-user标签)
+            - [3.4 hasPermission标签](#34-haspermission标签)
+            - [3.5 principal标签](#35-principal标签)
+        - [4.Shiro会话机制](#4shiro会话机制)
+            - [4.1 servlet容器的session-推荐使用](#41-servlet容器的session-推荐使用)
+            - [4.2 shiro的容器session](#42-shiro的容器session)
+        - [5.自定义Realm](#5自定义realm)
+    - [五.加密](#五加密)
+        - [1.shiro加密解密](#1shiro加密解密)
+        - [2.shiro解密应用](#2shiro解密应用)
+    - [六.Shiro支持特性](#六shiro支持特性)
+        - [1.Web  支持](#1web--支持)
+        - [2.缓存支持](#2缓存支持)
+        - [3.并发支持](#3并发支持)
+        - [4.测试支持](#4测试支持)
+        - [5.“RunAs ”支持](#5runas-支持)
+        - [6.“Remember Me"](#6remember-me)
+    - [七.spring整合shiro](#七spring整合shiro)
+        - [1.准备sql脚本](#1准备sql脚本)
+        - [2.导入依赖，pom.xml](#2导入依赖pomxml)
+        - [3.web.xml](#3webxml)
+        - [4.准备配置文件](#4准备配置文件)
+            - [4.1 applicationContext.xml](#41-applicationcontextxml)
+            - [4.2 mybatis-config.xml](#42-mybatis-configxml)
+            - [4.3 springmvc.xml](#43-springmvcxml)
+            - [4.4 log4j.properties](#44-log4jproperties)
+        - [5.建立实体类User](#5建立实体类user)
+        - [6.建立dao接口](#6建立dao接口)
+        - [7.创建service接口及其实现类](#7创建service接口及其实现类)
+        - [8.建立UserController类](#8建立usercontroller类)
+        - [9.建立自定义Realm，MyRealm](#9建立自定义realmmyrealm)
+        - [10.测试](#10测试)
+
+<!-- /TOC -->
 Shiro官网：http://shiro.apache.org/
 
 百度百科：https://baike.baidu.com/item/shiro/17753571?fr=aladdin
@@ -1354,3 +1412,656 @@ public class LoginServlet extends HttpServlet{
 
 ## 七.spring整合shiro
 
+### 1.准备sql脚本
+
+**t_permission.sql**
+
+```mysql
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for t_permission
+-- ----------------------------
+DROP TABLE IF EXISTS `t_permission`;
+CREATE TABLE `t_permission` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `permissionName` varchar(50) DEFAULT NULL,
+  `roleId` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `roleId` (`roleId`),
+  CONSTRAINT `t_permission_ibfk_1` FOREIGN KEY (`roleId`) REFERENCES `t_role` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of t_permission
+-- ----------------------------
+INSERT INTO `t_permission` VALUES ('1', 'user:*', '1');
+INSERT INTO `t_permission` VALUES ('2', 'student:*', '2');
+```
+
+**t_role.sql**
+
+```mysql
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for t_role
+-- ----------------------------
+DROP TABLE IF EXISTS `t_role`;
+CREATE TABLE `t_role` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `roleName` varchar(20) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of t_role
+-- ----------------------------
+INSERT INTO `t_role` VALUES ('1', 'admin');
+INSERT INTO `t_role` VALUES ('2', 'teacher');
+```
+
+**t_user.sql**
+
+```mysql
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for t_user
+-- ----------------------------
+DROP TABLE IF EXISTS `t_user`;
+CREATE TABLE `t_user` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `userName` varchar(20) DEFAULT NULL,
+  `password` varchar(100) DEFAULT NULL,
+  `roleId` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `roleId` (`roleId`),
+  CONSTRAINT `t_user_ibfk_1` FOREIGN KEY (`roleId`) REFERENCES `t_role` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of t_user
+-- ----------------------------
+INSERT INTO `t_user` VALUES ('1', 'jack', '123', '1');
+INSERT INTO `t_user` VALUES ('2', 'rose', '123', '2');
+INSERT INTO `t_user` VALUES ('3', 'marry', '123', null);
+INSERT INTO `t_user` VALUES ('4', 'json', '456', null);
+```
+
+### 2.导入依赖，pom.xml
+
+```xml
+<dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>3.8.1</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- 添加Servlet支持 -->
+  	<dependency>
+		<groupId>javax.servlet</groupId>
+		<artifactId>javax.servlet-api</artifactId>
+		<version>3.1.0</version>
+	</dependency>
+	<dependency>
+		<groupId>javax.servlet.jsp</groupId>
+		<artifactId>javax.servlet.jsp-api</artifactId>
+		<version>2.3.1</version>
+	</dependency>
+	<!-- 添加jtl支持 -->
+	<dependency>
+		<groupId>javax.servlet</groupId>
+		<artifactId>jstl</artifactId>
+		<version>1.2</version>
+	</dependency>
+  	<!-- 添加Spring支持 -->
+	<dependency>
+  		<groupId>org.springframework</groupId>
+  		<artifactId>spring-core</artifactId>
+  		<version>4.1.7.RELEASE</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>org.springframework</groupId>
+  		<artifactId>spring-beans</artifactId>
+  		<version>4.1.7.RELEASE</version>
+  	</dependency>
+  	<dependency>
+         <groupId>org.springframework</groupId>
+         <artifactId>spring-tx</artifactId>
+         <version>4.1.7.RELEASE</version>
+        </dependency>
+  	<dependency>
+  		<groupId>org.springframework</groupId>
+  		<artifactId>spring-context</artifactId>
+  		<version>4.1.7.RELEASE</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>org.springframework</groupId>
+  		<artifactId>spring-context-support</artifactId>
+  		<version>4.1.7.RELEASE</version>
+  	</dependency>
+  	<dependency>
+		<groupId>org.springframework</groupId>
+		<artifactId>spring-web</artifactId>
+		<version>4.1.7.RELEASE</version>
+	</dependency>
+	<dependency>
+		<groupId>org.springframework</groupId>
+		<artifactId>spring-webmvc</artifactId>
+		<version>4.1.7.RELEASE</version>
+	</dependency>
+	<dependency>
+		<groupId>org.springframework</groupId>
+		<artifactId>spring-aop</artifactId>
+		<version>4.1.7.RELEASE</version>
+	</dependency>
+	<dependency>
+		<groupId>org.springframework</groupId>
+		<artifactId>spring-aspects</artifactId>
+		<version>4.1.7.RELEASE</version>
+	</dependency>
+	<dependency>
+		<groupId>org.springframework</groupId>
+		<artifactId>spring-jdbc</artifactId>
+		<version>4.1.7.RELEASE</version>
+	</dependency>
+  	<!-- spring整合mybatis -->
+	<dependency>
+		<groupId>org.mybatis</groupId>
+		<artifactId>mybatis-spring</artifactId>
+		<version>1.2.3</version>
+	</dependency>
+  	<!-- 添加日志支持 -->
+  	<dependency>
+		<groupId>log4j</groupId>
+		<artifactId>log4j</artifactId>
+		<version>1.2.17</version>
+	</dependency>
+	<!-- 添加mybatis支持 -->
+	 <dependency>
+		<groupId>org.mybatis</groupId>
+		<artifactId>mybatis</artifactId>
+		<version>3.3.0</version>
+	</dependency>
+	<!-- jdbc驱动包  -->
+	<dependency>
+		<groupId>mysql</groupId>
+		<artifactId>mysql-connector-java</artifactId>
+		<version>5.1.37</version>
+	</dependency>
+	<!-- shiro核心包 -->
+	<dependency>
+		<groupId>org.apache.shiro</groupId>
+		<artifactId>shiro-core</artifactId>
+		<version>1.2.4</version>
+	</dependency>
+	<dependency>
+		<groupId>org.slf4j</groupId>
+		<artifactId>slf4j-log4j12</artifactId>
+		<version>1.7.12</version>
+	</dependency>
+	<dependency>
+		<groupId>org.apache.shiro</groupId>
+		<artifactId>shiro-web</artifactId>
+		<version>1.2.4</version>
+	</dependency>
+	<!-- spring整合shiro -->
+	<dependency>
+		<groupId>org.apache.shiro</groupId>
+		<artifactId>shiro-spring</artifactId>
+		<version>1.2.4</version>
+	</dependency>
+  </dependencies>
+```
+
+### 3.web.xml
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/javaee" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd" id="WebApp_ID" version="2.5">
+  <display-name>spring_shiro</display-name>
+  <welcome-file-list>
+    <welcome-file>index.jsp</welcome-file>
+  </welcome-file-list>
+    <!-- shiro过滤器定义 -->
+	<filter>  
+	    <filter-name>shiroFilter</filter-name>  
+	    <filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>  
+    <init-param>  
+    <!-- 该值缺省为false,表示生命周期由SpringApplicationContext管理,设置为true则表示由ServletContainer管理 -->  
+    <param-name>targetFilterLifecycle</param-name>  
+    <param-value>true</param-value>  
+    </init-param>  
+	</filter>  
+	<filter-mapping>  
+	        <filter-name>shiroFilter</filter-name>  
+	        <url-pattern>/*</url-pattern>  
+	</filter-mapping>
+    <!-- Spring配置文件 -->
+	<context-param>
+		<param-name>contextConfigLocation</param-name>
+		<param-value>classpath:applicationContext.xml</param-value>
+	</context-param>
+	<!-- 编码过滤器 -->
+	<filter>
+		<filter-name>encodingFilter</filter-name>
+		<filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+		<init-param>
+			<param-name>encoding</param-name>
+			<param-value>UTF-8</param-value>
+		</init-param>
+	</filter>
+	<filter-mapping>
+		<filter-name>encodingFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+	<!-- Spring监听器 -->
+	<listener>
+		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+	</listener>
+	<!-- 添加对springmvc的支持 -->
+	<servlet>
+		<servlet-name>springMVC</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<init-param>
+			<param-name>contextConfigLocation</param-name>
+			<param-value>classpath:spring-mvc.xml</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>springMVC</servlet-name>
+		<url-pattern>*.do</url-pattern>
+	</servlet-mapping>
+</web-app>
+```
+
+### 4.准备配置文件
+
+#### 4.1 applicationContext.xml
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>    
+<beans xmlns="http://www.springframework.org/schema/beans"    
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"   
+    xmlns:p="http://www.springframework.org/schema/p"  
+    xmlns:aop="http://www.springframework.org/schema/aop"   
+    xmlns:context="http://www.springframework.org/schema/context"  
+    xmlns:jee="http://www.springframework.org/schema/jee"  
+    xmlns:tx="http://www.springframework.org/schema/tx"  
+    xsi:schemaLocation="    
+        http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.0.xsd  
+        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd  
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd  
+        http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-4.0.xsd  
+        http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.0.xsd">   
+        
+	<!-- 自动扫描 -->
+	<context:component-scan base-package="com.jack.service" />
+	
+	<!-- 配置数据源 -->
+	<bean id="dataSource"
+		class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName" value="com.mysql.jdbc.Driver"/>
+		<property name="url" value="jdbc:mysql://localhost:3306/db_shiro"/>
+		<property name="username" value="root"/>
+		<property name="password" value="root"/>
+	</bean>
+
+	<!-- 配置mybatis的sqlSessionFactory -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<!-- 自动扫描mappers.xml文件 -->
+		<property name="mapperLocations" value="classpath:com/jack/mappers/*.xml"></property>
+		<!-- mybatis配置文件 -->
+		<property name="configLocation" value="classpath:mybatis-config.xml"></property>
+	</bean>
+
+	<!-- DAO接口所在包名，Spring会自动查找其下的类 -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="com.jack.dao" />
+		<property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"></property>
+	</bean>
+
+	<!-- (事务管理)transaction manager, use JtaTransactionManager for global tx -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	
+	<!-- 自定义Realm -->
+	<bean id="myRealm" class="com.jack.realm.MyRealm"/>  
+	
+	<!-- 安全管理器 -->
+	<bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">  
+  	  <property name="realm" ref="myRealm"/>  
+	</bean>  
+	
+	<!-- Shiro过滤器 -->
+	<bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">  
+	    <!-- Shiro的核心安全接口,这个属性是必须的 -->  
+	    <property name="securityManager" ref="securityManager"/>
+	    <!-- 身份认证失败，则跳转到登录页面的配置 -->  
+	    <property name="loginUrl" value="/index.jsp"/>
+	    <!-- 权限认证失败，则跳转到指定页面 -->  
+	    <property name="unauthorizedUrl" value="/unauthor.jsp"/>  
+	    <!-- Shiro连接约束配置,即过滤链的定义 -->  
+	    <property name="filterChainDefinitions">  
+	        <value>  
+	             /login=anon
+				/admin*=authc
+				/student=roles[teacher]
+				/teacher=perms["user:create"]
+	        </value>  
+	    </property>
+	</bean>  
+	
+	<!-- 保证实现了Shiro内部lifecycle函数的bean执行 -->  
+	<bean id="lifecycleBeanPostProcessor" class="org.apache.shiro.spring.LifecycleBeanPostProcessor"/>  
+	
+	<!-- 开启Shiro注解 -->
+	<bean class="org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator" depends-on="lifecycleBeanPostProcessor"/>  
+  		<bean class="org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor">  
+  	  <property name="securityManager" ref="securityManager"/>  
+    </bean>  
+  
+	<!-- 配置事务通知属性 -->  
+    <tx:advice id="txAdvice" transaction-manager="transactionManager">  
+        <!-- 定义事务传播属性 -->  
+        <tx:attributes>  
+            <tx:method name="insert*" propagation="REQUIRED" />  
+            <tx:method name="update*" propagation="REQUIRED" />  
+            <tx:method name="edit*" propagation="REQUIRED" />  
+            <tx:method name="save*" propagation="REQUIRED" />  
+            <tx:method name="add*" propagation="REQUIRED" />  
+            <tx:method name="new*" propagation="REQUIRED" />  
+            <tx:method name="set*" propagation="REQUIRED" />  
+            <tx:method name="remove*" propagation="REQUIRED" />  
+            <tx:method name="delete*" propagation="REQUIRED" />  
+            <tx:method name="change*" propagation="REQUIRED" />  
+            <tx:method name="check*" propagation="REQUIRED" />  
+            <tx:method name="get*" propagation="REQUIRED" read-only="true" />  
+            <tx:method name="find*" propagation="REQUIRED" read-only="true" />  
+            <tx:method name="load*" propagation="REQUIRED" read-only="true" />  
+            <tx:method name="*" propagation="REQUIRED" read-only="true" />  
+        </tx:attributes>  
+    </tx:advice>  
+  
+    <!-- 配置事务切面 -->  
+    <aop:config>  
+        <aop:pointcut id="serviceOperation"  
+            expression="execution(* com.jack.service.*.*(..))" />  
+        <aop:advisor advice-ref="txAdvice" pointcut-ref="serviceOperation" />  
+    </aop:config>  
+</beans>
+```
+
+#### 4.2 mybatis-config.xml
+
+```xml
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+	<!-- 别名 -->
+	<typeAliases>
+		<package name="com.jack.entity"/>
+	</typeAliases>
+</configuration>
+
+```
+
+#### 4.3 springmvc.xml
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>    
+<beans xmlns="http://www.springframework.org/schema/beans"    
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"   
+    xmlns:p="http://www.springframework.org/schema/p"  
+    xmlns:aop="http://www.springframework.org/schema/aop"   
+    xmlns:context="http://www.springframework.org/schema/context"  
+    xmlns:jee="http://www.springframework.org/schema/jee"  
+    xmlns:tx="http://www.springframework.org/schema/tx"  
+    xsi:schemaLocation="    
+        http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.0.xsd  
+        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd  
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd  
+        http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-4.0.xsd  
+        http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.0.xsd">    
+
+	<!-- 使用注解的包，包括子集 -->
+	<context:component-scan base-package="com.jack.controller" />
+
+	<!-- 视图解析器 -->
+	<bean id="viewResolver"
+		class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="prefix" value="/" />
+		<property name="suffix" value=".jsp"></property>
+	</bean>
+
+</beans>  
+```
+
+#### 4.4 log4j.properties
+
+```properties
+log4j.rootLogger=DEBUG, Console  
+  
+#Console  
+log4j.appender.Console=org.apache.log4j.ConsoleAppender  
+log4j.appender.Console.layout=org.apache.log4j.PatternLayout  
+log4j.appender.Console.layout.ConversionPattern=%d [%t] %-5p [%c] - %m%n  
+  
+log4j.logger.java.sql.ResultSet=INFO  
+log4j.logger.org.apache=INFO  
+log4j.logger.java.sql.Connection=DEBUG  
+log4j.logger.java.sql.Statement=DEBUG  
+log4j.logger.java.sql.PreparedStatement=DEBUG  
+```
+
+### 5.建立实体类User
+
+建立包com.jack.entity
+
+```java
+public class User {
+	
+	private Integer id;
+	private String userName;
+	private String password;
+    // get和set方法省略
+}
+```
+
+### 6.建立dao接口
+
+建立包com.jack.dao，和建立dao接口对应的映射文件UserMapper.xml(在resources目录创建com/jack/mappers/)
+
+```java
+public interface UserDao {
+
+	/**
+	 * 通过用户名查询用户
+	 * @param userName
+	 * @return
+	 */
+	public User getByUserName(String userName);
+	
+	/**
+	 * 通过用户名查询角色信息
+	 * @param userName
+	 * @return
+	 */
+	public Set<String> getRoles(String userName);
+	
+	/**
+	 * 通过用户名查询权限信息
+	 * @param userName
+	 * @return
+	 */
+	public Set<String> getPermissions(String userName);
+}
+```
+
+```xml
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jack.dao.UserDao">
+
+	<resultMap type="User" id="UserResult">
+		<result property="id" column="id"/>
+		<result property="userName" column="userName"/>
+		<result property="password" column="password"/>
+	</resultMap>
+	
+	<select id="getByUserName" parameterType="String" resultMap="UserResult">
+		select * from t_user where userName=#{userName}
+	</select>
+	
+	<select id="getRoles" parameterType="String" resultType="String">
+		select r.roleName from t_user u,t_role r where u.roleId=r.id and u.userName=#{userName}
+	</select>
+	
+	<select id="getPermissions" parameterType="String" resultType="String">
+		select p.permissionName from t_user u,t_role r,t_permission p where u.roleId=r.id and p.roleId=r.id and u.userName=#{userName}
+	</select>
+
+</mapper> 
+```
+
+### 7.创建service接口及其实现类
+
+创建包com.jack.service和实现类com.jack.service.impl.UserServiceImpl
+
+```java
+public interface UserService {
+
+	/**
+	 * 通过用户名查询用户
+	 * @param userName
+	 * @return
+	 */
+	public User getByUserName(String userName);
+	
+	/**
+	 * 通过用户名查询角色信息
+	 * @param userName
+	 * @return
+	 */
+	public Set<String> getRoles(String userName);
+	
+	/**
+	 * 通过用户名查询权限信息
+	 * @param userName
+	 * @return
+	 */
+	public Set<String> getPermissions(String userName);
+}
+```
+
+```java
+@Service("userService")
+public class UserServiceImpl implements UserService {
+	@Resource
+	private UserDao userDao;
+	
+	public User getByUserName(String userName) {
+		return userDao.getByUserName(userName);
+	}
+
+	public Set<String> getRoles(String userName) {
+		return userDao.getRoles(userName);
+	}
+
+	public Set<String> getPermissions(String userName) {
+		return userDao.getPermissions(userName);
+	}
+}
+```
+
+### 8.建立UserController类
+
+建立包com.jack.controller
+
+```java
+/**
+ * 用户Controller层
+ * @author Administrator
+ *
+ */
+@Controller
+@RequestMapping("/user")
+public class UserController {
+	/**
+	 * 用户登录
+	 * @param user
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping("/login")
+	public String login(User user,HttpServletRequest request){
+		Subject subject=SecurityUtils.getSubject();
+		UsernamePasswordToken token=new UsernamePasswordToken(user.getUserName(), user.getPassword());
+		try{
+			subject.login(token);
+			Session session=subject.getSession();
+			System.out.println("sessionId:"+session.getId());
+			System.out.println("sessionHost:"+session.getHost());
+			System.out.println("sessionTimeout:"+session.getTimeout());
+			session.setAttribute("info", "session的数据");
+			return "redirect:/success.jsp";
+		}catch(Exception e){
+			e.printStackTrace();
+			request.setAttribute("user", user);
+			request.setAttribute("errorMsg", "用户名或密码错误！");
+			return "index";
+		}
+	}
+}
+```
+
+### 9.建立自定义Realm，MyRealm
+
+建立com.jack.realm
+
+```java
+public class MyRealm extends AuthorizingRealm{
+
+	@Resource
+	private UserService userService;
+	
+	/**
+	 * 为当限前登录的用户授予角色和权
+	 */
+	@Override
+	protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principals) {
+		String userName=(String)principals.getPrimaryPrincipal();
+		SimpleAuthorizationInfo authorizationInfo=new SimpleAuthorizationInfo();
+		authorizationInfo.setRoles(userService.getRoles(userName));
+		authorizationInfo.setStringPermissions(userService.getPermissions(userName));
+		return authorizationInfo;
+	}
+
+	/**
+	 * 验证当前登录的用户
+	 */
+	@Override
+	protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken token) throws AuthenticationException {
+		String userName=(String)token.getPrincipal();
+			User user=userService.getByUserName(userName);
+			if(user!=null){
+				AuthenticationInfo authcInfo=new SimpleAuthenticationInfo(user.getUserName(),user.getPassword(),"xx");
+				return authcInfo;
+			}else{
+				return null;				
+			}
+	}
+}
+```
+
+### 10.测试
