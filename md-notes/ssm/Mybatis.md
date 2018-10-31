@@ -256,7 +256,7 @@ public interface UserDao {
             <!--定义数据源POOLED(连接池)、UNPOOLED、JNDI-->
             <dataSource type="POOLED">
                 <property name="driver" value="com.mysql.jdbc.Driver"></property>
-                <property name="url" value="jdbc:mysql:///mybatis"></property>
+                <property name="url" value="jdbc:mysql:///db_mybatis"></property>
                 <property name="username" value="root"></property>
                 <property name="password" value="root"></property>
             </dataSource>
@@ -495,7 +495,7 @@ log4j.appender.LOGFILE.layout.ConversionPattern=%d{ISO8601} %-6r [%15.15t] %-5p 
             <!--定义数据源POOLED(连接池)、UNPOOLED、JNDI-->
             <dataSource type="POOLED">
                 <property name="driver" value="com.mysql.jdbc.Driver"/>
-                <property name="url" value="jdbc:mysql:///mybatis"/>
+                <property name="url" value="jdbc:mysql:///db_mybatis"/>
                 <property name="username" value="root"/>
                 <property name="password" value="root"/>
             </dataSource>
@@ -591,7 +591,7 @@ void saveUser(User user);
 
 **注意：**
 
-- **xml配置方式要求<mapper namespace=”映射接口所在的包名”>，insert、delete、update和select标签里面的id属性必须和代理接口的方法名称一样** 
+- xml配置方式要求<mapper namespace=”映射接口所在的全路径包名”>，insert、delete、update和select标签里面的id属性必须和代理接口的方法名称一样** 
 
 ```xml
 <!--保存用户-->
@@ -662,7 +662,7 @@ public class MybatisTest {
 }
 ```
 
-在测试的时候如果发现数据库没有添加数据，那么一定是事务没有提交，加上sqlSession.commit即可。
+在测试的时候如果发现数据库没有添加数据，那么一定是事务没有提交，加上**sqlSession.commit**即可。
 
 但是这是又存在一个问题：保存之前的User的id和保存User之后的id都是null，**怎么获取保存用户之后的id？**
 
@@ -1817,7 +1817,7 @@ SqlMapConfig.xml可以引用java属性文件中的配置信息如下：
 
 ```properties
 jdbc.driver=com.mysql.jdbc.Driver
-jdbc.url=jdbc:mysql://localhost:3306/mybatis
+jdbc.url=jdbc:mysql://localhost:3306/db_mybatis
 jdbc.username=root
 jdbc.password=root
 ```
@@ -2196,7 +2196,7 @@ Mybatis的映射文件中，前面我们的SQL都是比较简单的，有些时�
 
 #### 3-1.动态SQL之if标签
 
-我们根据实体类的不同取值，使用不同的SQL语句来进行查询。比如在id如果不为空时可以根据id查询，如果username不同空时还要加入用户名作为条件。这种情况在我们的多条件组合查询中经常会碰到。 
+我们根据实体类的不同取值，使用不同的SQL语句来进行查询。比如在id如果不为空时可以根据id查询，如果username不为空时还要加入用户名作为条件。这种情况在我们的多条件组合查询中经常会碰到。 
 **第一步：UserDao.xml中配置**
 
 ```xml
